@@ -1,0 +1,43 @@
+version: "3.4"
+
+services:
+  user-service:
+    container_name: user-service
+    image: "user-service:latest"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - DUMMY_ENV=1
+    ports:
+      - "9000:8080"
+  db:
+    container_name: user-service-db
+    user: postgres
+    image: postgres:13-alpine
+    command: "postgres -c max_stack_depth=7MB"
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  flyway:
+    container_name: migrate
+    image: flyway/flyway:latest
+    restart: "no"
+    volumes:
+      - ./db:/flyway/sql
+    environment:
+      FLYWAY_URL: jdbc:postgresql://db:5432/postgres
+      FLYWAY_USER: postgres
+      FLYWAY_PASSWORD: postgres
+    command: migrate
+    depends_on:
+      db:
+        condition: service_healthy
