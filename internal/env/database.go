@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// DatabaseConfig holds the database configuration.
+// DatabaseConfig holds a database configuration.
 type DatabaseConfig struct {
 	Host     string `mapstructure:"HOST"`
 	Username string `mapstructure:"USER"`

@@ -70,8 +70,6 @@ func main() {
 // CreatedAt: the date and time the user was created
 // UpdatedAt: the date and time the user was last updated
 
-// Return a paginated list of users, allowing the results to be filtered by any of the fields e.g Country = "UK" - db done
-
 // The service must allow the following operations:
 // Create a new user - db done
 // Modify an existing user - db done

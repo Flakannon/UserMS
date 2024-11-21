@@ -29,9 +29,9 @@ func (s *server) GetUsers(ctx context.Context, req *api.GetUsersRequest) (*api.G
 
 func (s *server) CreateUser(ctx context.Context, req *api.CreateUserRequest) (*api.CreateUserResponse, error) {
 	var u service.User
-	u.FromAPI(req)
+	u.FromAPICreate(req)
 
-	id, err := service.FormatUserAndPersist(ctx, s.Datasource, u)
+	id, err := service.FormatNewUserAndPersist(ctx, s.Datasource, u)
 	if err != nil {
 		return nil, err
 	}
@@ -43,9 +43,25 @@ func (s *server) CreateUser(ctx context.Context, req *api.CreateUserRequest) (*a
 }
 
 func (s *server) ModifyUser(ctx context.Context, req *api.ModifyUserRequest) (*api.ModifyUserResponse, error) {
-	return &api.ModifyUserResponse{}, nil
+	var u service.User
+	u.FromAPIUpdate(req)
+
+	err := service.FormatExistingUserAndPersist(ctx, s.Datasource, u)
+	if err != nil {
+		return nil, err
+	}
+	return &api.ModifyUserResponse{
+		Message: "Successfully modified user",
+	}, nil
 }
 
 func (s *server) DeleteUser(ctx context.Context, req *api.DeleteUserRequest) (*api.DeleteUserResponse, error) {
-	return &api.DeleteUserResponse{}, nil
+	err := service.DeleteUserFromDatasource(ctx, s.Datasource, req.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.DeleteUserResponse{
+		Message: "Successfully deleted user",
+	}, nil
 }

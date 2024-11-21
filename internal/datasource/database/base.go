@@ -1,4 +1,4 @@
-// Package database contains the interfaces and structs for interacting with different data sources.
+// Package database contains the common interfaces and structs for interacting with different database sources.
 package database
 
 import (

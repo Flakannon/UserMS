@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	_ "embed"
 
@@ -24,16 +25,41 @@ func (d *Client) CreateUser(ctx context.Context, user dto.UserDTO) (string, erro
 		user.Country,
 	).Scan(&id)
 	if err != nil {
-		return "", fmt.Errorf("failed to create user: %w", err)
+		return "", fmt.Errorf("database error: %w", err)
 	}
 
 	return id, nil
 }
 
+//go:embed scripts/postgres_update_user_function_call.sql
+var updateUserFunctionCall string
+
 func (d *Client) ModifyUser(ctx context.Context, user dto.UserDTO) error {
+	slog.Info("Modifying user", "id", user.ID)
+	_, err := d.DB.ExecContext(ctx, updateUserFunctionCall,
+		user.ID,
+		user.FirstName,
+		user.LastName,
+		user.Nickname,
+		user.Password,
+		user.Email,
+		user.Country,
+	)
+	if err != nil {
+		return fmt.Errorf("database error: %w", err)
+	}
+
 	return nil
 }
 
-func (d *Client) DeleteUser(ctx context.Context, userID int) error {
+//go:embed scripts/postgres_delete_user_function_call.sql
+var deleteUserFunctionCall string
+
+func (d *Client) DeleteUser(ctx context.Context, userUUID string) error {
+	_, err := d.DB.ExecContext(ctx, deleteUserFunctionCall, userUUID)
+	if err != nil {
+		return fmt.Errorf("database error: %w", err)
+	}
+
 	return nil
 }

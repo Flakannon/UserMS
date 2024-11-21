@@ -37,10 +37,24 @@ func main() {
 
 	slog.Info("Created user", "id", createResp.Id)
 
-	// Delete the user
-	deleteResp, err := client.DeleteUser(ctx, &api.DeleteUserRequest{Id: createResp.Id})
+	// Modify the user
+	modifyResp, err := client.ModifyUser(ctx, &api.ModifyUserRequest{
+		Id:        createResp.Id,
+		FirstName: "Jane",
+		LastName:  "Doe",
+		Email:     "jane.doe@example.com",
+		Nickname:  "janedoe",
+	})
 	if err != nil {
-		logger.Fatal(fmt.Errorf("failed to delete user: %w", err))
+		logger.Fatal(fmt.Errorf("failed to modify user: %w", err))
 	}
-	slog.Info("Deleted user", "id", deleteResp.Message)
+
+	slog.Info("Modified user", "id", createResp.Id, "message", modifyResp.Message)
+
+	// Delete the user
+	// deleteResp, err := client.DeleteUser(ctx, &api.DeleteUserRequest{Id: createResp.Id})
+	// if err != nil {
+	// 	logger.Fatal(fmt.Errorf("failed to delete user: %w", err))
+	// }
+	// slog.Info("Deleted user", "id", deleteResp.Message)
 }
