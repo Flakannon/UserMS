@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "github.com/EFG/internal/api;api";
+
+// UserService definition
+service UserService {
+  // Create a new user
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+
+  // Modify an existing user
+  rpc ModifyUser(ModifyUserRequest) returns (ModifyUserResponse);
+
+  // Delete an existing user
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+
+  // Get a paginated list of users with optional filters
+  rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
+}
+
+// Messages for CreateUser
+message CreateUserRequest {
+  string first_name = 1;  // Required
+  string last_name = 2;   // Required
+  string nickname = 3;    // Optional
+  string email = 4;       // Required (must be unique)
+  string password = 5;    // Required (plain text, will be hashed at server level)
+  string country = 6;     // Required
+}
+
+message CreateUserResponse {
+  string id = 1;          // ID of the newly created user
+  string message = 2;     // Success or error message
+}
+
+// Messages for ModifyUser
+message ModifyUserRequest {
+  string id = 1;          // Required: ID of the user to modify
+  string first_name = 2;  // Optional: New first name
+  string last_name = 3;   // Optional: New last name
+  string nickname = 4;    // Optional: New nickname
+  string email = 5;       // Optional: New email
+  string password = 6;    // Optional: New password (plain text, will be hashed at server level)
+  string country = 7;     // Optional: New country
+}
+
+message ModifyUserResponse {
+  string message = 1;     // Success or error message
+}
+
+// Messages for DeleteUser
+message DeleteUserRequest {
+  string id = 1;          // Required: ID of the user to delete
+}
+
+message DeleteUserResponse {
+  string message = 1;     // Success or error message
+}
+
+// Messages for GetUsers
+message GetUsersRequest {
+  int32 page = 1;          // Page number (starts at 1)
+  int32 page_size = 2;     // Results per page
+  string filter_id = 3;    // Optional filter by ID
+  string filter_first_name = 4; // Optional filter by FirstName
+  string filter_last_name = 5;  // Optional filter by LastName
+  string filter_nickname = 6;   // Optional filter by Nickname
+  string filter_email = 7;      // Optional filter by Email
+  string filter_country = 8;    // Optional filter by Country
+}
+
+message GetUsersResponse {
+  repeated User users = 1;    // Paginated list of users
+  int32 total_count = 2;      // Total number of users matching the filters
+}
+
+// The User message
+message User {
+  string id = 1;          // Unique identifier
+  string first_name = 2;  // User's first name
+  string last_name = 3;   // User's last name
+  string nickname = 4;    // User's nickname
+  string email = 5;       // User's email address
+  string country = 6;     // User's country
+  string created_at = 7;  // Timestamp when the user was created
+  string updated_at = 8;  // Timestamp when the user was last updated
+}
