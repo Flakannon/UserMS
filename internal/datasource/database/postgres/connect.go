@@ -5,21 +5,32 @@ import (
 	_ "embed"
 	"fmt"
 	"log"
+	"log/slog"
 
-	"github.com/EFG/internal/database"
+	"github.com/EFG/internal/datasource/database"
 	"github.com/EFG/internal/env"
+
+	_ "github.com/lib/pq"
 )
 
-type PostgresConnector struct {
+type Client struct {
 	Config env.DatabaseConfig
 	*database.BaseClient
 }
 
+func NewClient(config env.DatabaseConfig) *Client {
+	return &Client{
+		Config:     config,
+		BaseClient: &database.BaseClient{},
+	}
+}
+
 // Connects to database via postgres driver
-func (d *PostgresConnector) Connect() error {
+func (d *Client) Connect() error {
 	connString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		d.Config.Username, d.Config.Password, d.Config.Host, d.Config.Port, d.Config.Database)
-	log.Println("Now attempting to connect to postgres database")
+
+	slog.Info("Now attempting to connect to postgres database")
 
 	db, err := sql.Open("postgres", connString)
 	if err != nil {
@@ -34,7 +45,7 @@ func (d *PostgresConnector) Connect() error {
 		return fmt.Errorf("error pinging postgres database: %v", err)
 	}
 
-	log.Println("Successfully connected to postgres database")
+	slog.Info("Successfully connected to postgres database")
 
 	return nil
 }

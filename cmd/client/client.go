@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/EFG/api"
+	"github.com/EFG/internal/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -13,7 +15,7 @@ import (
 func main() {
 	conn, err := grpc.NewClient("localhost:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("Failed to connect: %v", err)
+		logger.Fatal(fmt.Errorf("failed to connect: %w", err))
 	}
 	client := api.NewUserServiceClient(conn)
 
@@ -26,16 +28,19 @@ func main() {
 		LastName:  "Doe",
 		Email:     "john.doe@example.com",
 		Password:  "securepassword",
+		Country:   "US",
+		Nickname:  "johndoe",
 	})
 	if err != nil {
-		log.Fatalf("CreateUser failed: %v", err)
+		logger.Fatal(fmt.Errorf("failed to create user: %w", err))
 	}
-	log.Printf("Created user: %s", createResp.Id)
+
+	slog.Info("Created user", "id", createResp.Id)
 
 	// Delete the user
 	deleteResp, err := client.DeleteUser(ctx, &api.DeleteUserRequest{Id: createResp.Id})
 	if err != nil {
-		log.Fatalf("DeleteUser failed: %v", err)
+		logger.Fatal(fmt.Errorf("failed to delete user: %w", err))
 	}
-	log.Printf("Deleted user: %s", deleteResp.Message)
+	slog.Info("Deleted user", "id", deleteResp.Message)
 }

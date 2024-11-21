@@ -1,19 +1,6 @@
--- DROP PROCEDURE IF EXISTS create_user(
---     UUID,
---     TEXT,
---     TEXT,
---     TEXT,
---     TEXT,
---     TEXT,
---     TEXT
---     TIMESTAMP WITH TIME ZONE,
---     TIMESTAMP WITH TIME ZONE
--- );
+DROP FUNCTION IF EXISTS create_user;
 
-DROP PROCEDURE IF EXISTS create_user;
-
-CREATE PROCEDURE create_user(
-    p_id UUID,
+CREATE FUNCTION create_user(
     p_first_name TEXT,
     p_last_name TEXT,
     p_nick_name TEXT,
@@ -21,17 +8,19 @@ CREATE PROCEDURE create_user(
     p_email TEXT,
     p_country TEXT
 )
+RETURNS UUID 
 LANGUAGE PLPGSQL
 AS $$
+DECLARE
+    new_user_id UUID;
 BEGIN
     -- Validate required inputs
-    IF p_id IS NULL OR p_email IS NULL THEN
-        RAISE EXCEPTION 'Invalid input: id and email are required.';
+    IF p_email IS NULL THEN
+        RAISE EXCEPTION 'Invalid input: email is required.';
     END IF;
 
     -- Insert into the user table
     INSERT INTO users (
-        id,
         first_name,
         last_name,
         nick_name,
@@ -40,7 +29,6 @@ BEGIN
         country
     )
     VALUES (
-        p_id,
         p_first_name,
         p_last_name,
         p_nick_name,
@@ -48,6 +36,8 @@ BEGIN
         p_email,
         p_country
     )
-    ON CONFLICT (email) DO NOTHING; -- Optional conflict handling
+    RETURNING id INTO new_user_id; -- Capture the generated ID
+
+    RETURN new_user_id; -- Return the captured ID
 END;
 $$;

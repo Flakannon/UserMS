@@ -2,6 +2,7 @@ package env
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/spf13/viper"
 )
@@ -24,7 +25,7 @@ func (c DatabaseConfig) Validate() error {
 	return nil
 }
 
-func LoadDatabaseConfigs() (config DatabaseConfig, err error) {
+func LoadDatabaseConfig() (config DatabaseConfig, err error) {
 	if err = viperBindDB("POSTGRES", &config); err != nil {
 		return DatabaseConfig{}, fmt.Errorf("failed to load database configs for prefix %s: %w", "POSTGRES", err)
 	}
@@ -32,8 +33,7 @@ func LoadDatabaseConfigs() (config DatabaseConfig, err error) {
 		return DatabaseConfig{}, fmt.Errorf("validation failed  %s: %w", "POSTGRES", err)
 	}
 
-	// Log the loaded configuration (exclude sensitive fields)
-	fmt.Printf("Loaded configuration for prefix %s: %+v\n", "POSTGRES", config)
+	slog.Info("Loaded configuration for prefix %s: %+v\n", "POSTGRES", config)
 
 	return
 }

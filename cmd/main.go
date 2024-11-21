@@ -1,38 +1,58 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"log/slog"
 	"net"
 	"os"
 	"os/signal"
 
 	"github.com/EFG/api"
+	"github.com/EFG/internal/datasource/database/postgres"
+	"github.com/EFG/internal/env"
+	"github.com/EFG/internal/logger"
 	"github.com/EFG/internal/server"
 	"google.golang.org/grpc"
 )
 
 func main() {
+	slog.SetDefault(logger.SetUpLogger(logger.LoggerInitOpts{
+		Writer:         os.Stdout,
+		VerbosityLevel: 0,
+	}))
+
 	lis, err := net.Listen("tcp", ":9000")
 	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
+		logger.Fatal(fmt.Errorf("failed to listen on port 9000: %w", err))
 	}
 
 	grpcServer := grpc.NewServer()
 
-	userServer := server.NewServer()
+	postgresConfig, err := env.LoadDatabaseConfig()
+	if err != nil {
+		logger.Fatal(fmt.Errorf("failed to load database config: %w", err))
+	}
+	postgresDataSource := postgres.NewClient(postgresConfig)
+	err = postgresDataSource.Connect()
+	if err != nil {
+		logger.Fatal(fmt.Errorf("failed to connect to database: %w", err))
+	}
+	defer postgresDataSource.Close()
+
+	userServer := server.NewServer(postgresDataSource)
 
 	api.RegisterUserServiceServer(grpcServer, userServer)
 
-	log.Println("gRPC server is listening on port 9000")
+	slog.Info("gRPC server is listening on port 9000")
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve: %v", err)
+		logger.Fatal(fmt.Errorf("failed to serve: %w", err))
 	}
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	<-c
 	grpcServer.GracefulStop()
-	log.Println("gRPC server is shutting down")
+	slog.Info("gRPC server is shutting down")
 }
 
 // user management micro service - implement in go

@@ -16,7 +16,7 @@ func TestLoadDatabaseConfigs(t *testing.T) {
 	os.Setenv("POSTGRES_DATABASE", "testdb")
 	os.Setenv("POSTGRES_SCHEMA", "public")
 
-	config, err := LoadDatabaseConfigs()
+	config, err := LoadDatabaseConfig()
 	assert.NoError(t, err)
 	assert.Equal(t, "localhost", config.Host)
 	assert.Equal(t, "user", config.Username)
