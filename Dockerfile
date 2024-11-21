@@ -1,7 +1,7 @@
 FROM golang:latest
 
 # Set environment variables
-ENV PORT=8080
+ENV PORT=9000
 ENV GIN_MODE=release
 
 # Set the working directory inside the container

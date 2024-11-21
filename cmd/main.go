@@ -1,9 +1,38 @@
 package main
 
-import "log"
+import (
+	"log"
+	"net"
+	"os"
+	"os/signal"
+
+	"github.com/EFG/api"
+	"github.com/EFG/internal/server"
+	"google.golang.org/grpc"
+)
 
 func main() {
-	log.Println("Starting user management service")
+	lis, err := net.Listen("tcp", ":9000")
+	if err != nil {
+		log.Fatalf("Failed to listen: %v", err)
+	}
+
+	grpcServer := grpc.NewServer()
+
+	userServer := server.NewServer()
+
+	api.RegisterUserServiceServer(grpcServer, userServer)
+
+	log.Println("gRPC server is listening on port 9000")
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("Failed to serve: %v", err)
+	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	<-c
+	grpcServer.GracefulStop()
+	log.Println("gRPC server is shutting down")
 }
 
 // user management micro service - implement in go
