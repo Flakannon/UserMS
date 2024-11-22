@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"time"
 
 	"github.com/EFG/internal/datasource/database"
 	"github.com/EFG/internal/env"
@@ -37,6 +38,9 @@ func (d *Client) Connect() error {
 		log.Println(err)
 		return err
 	}
+	db.SetMaxOpenConns(80)
+	db.SetMaxIdleConns(15)
+	db.SetConnMaxLifetime(30 * time.Minute)
 
 	d.DB = db
 

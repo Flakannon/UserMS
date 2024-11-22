@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	_ "embed"
 
@@ -25,6 +26,9 @@ func (d *Client) CreateUser(ctx context.Context, user dto.UserDTO) (string, erro
 		user.Country,
 	).Scan(&id)
 	if err != nil {
+		if strings.Contains(err.Error(), "user_email_unique") {
+			return "", fmt.Errorf("email already exists: %s", user.Email.String)
+		}
 		return "", fmt.Errorf("database error: %w", err)
 	}
 

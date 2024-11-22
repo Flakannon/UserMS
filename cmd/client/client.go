@@ -17,6 +17,8 @@ func main() {
 	if err != nil {
 		logger.Fatal(fmt.Errorf("failed to connect: %w", err))
 	}
+	defer conn.Close()
+
 	client := api.NewUserServiceClient(conn)
 
 	// Create a new user

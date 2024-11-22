@@ -37,6 +37,10 @@ func (d *Client) GetUsers(ctx context.Context, user dto.GetUsersArgs) (dto.Users
 		return nil, 0, fmt.Errorf("failed to scan users: %w", err)
 	}
 
+	if len(users) == 0 {
+		return nil, 0, fmt.Errorf("no users found for supplied filters")
+	}
+
 	return users, len(users), nil
 }
 

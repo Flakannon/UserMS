@@ -81,20 +81,6 @@ func (u *User) toDTO() dto.UserDTO {
 	}
 }
 
-// func NewUserFromDTO(userDTO dto.UserDTO) User {
-// 	return User{
-// 		ID:        userDTO.ID.String,
-// 		FirstName: userDTO.FirstName.String,
-// 		LastName:  userDTO.LastName.String,
-// 		Nickname:  userDTO.Nickname.String,
-// 		Password:  userDTO.Password.String,
-// 		Email:     userDTO.Email.String,
-// 		Country:   userDTO.Country.String,
-// 		CreatedAt: userDTO.CreatedAt.Time,
-// 		UpdatedAt: userDTO.UpdatedAt.Time,
-// 	}
-// }
-
 func FromDTOToAPI(userDTO dto.UsersDTO) []*api.User {
 	users := make([]*api.User, len(userDTO))
 	for i, u := range userDTO {
@@ -105,8 +91,6 @@ func FromDTOToAPI(userDTO dto.UsersDTO) []*api.User {
 			Nickname:  u.Nickname.String,
 			Email:     u.Email.String,
 			Country:   u.Country.String,
-			CreatedAt: u.CreatedAt.Time.String(),
-			UpdatedAt: u.UpdatedAt.Time.String(),
 		}
 	}
 	return users
