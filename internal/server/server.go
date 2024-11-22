@@ -4,6 +4,7 @@ import (
 	context "context"
 
 	"github.com/EFG/api"
+	"github.com/EFG/internal/datasource/dto"
 	"github.com/EFG/internal/service"
 )
 
@@ -24,7 +25,20 @@ func NewServer(d Datasource) *server {
 }
 
 func (s *server) GetUsers(ctx context.Context, req *api.GetUsersRequest) (*api.GetUsersResponse, error) {
-	return &api.GetUsersResponse{}, nil
+	var getUserArgs dto.GetUsersArgs
+	getUserArgs.FromAPI(req)
+
+	usersFromDatasource, count, err := service.GetPaginatedUsersList(ctx, s.Datasource, getUserArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	usersForResponse := service.FromDTOToAPI(usersFromDatasource)
+
+	return &api.GetUsersResponse{
+		Users:      usersForResponse,
+		TotalCount: int32(count),
+	}, nil
 }
 
 func (s *server) CreateUser(ctx context.Context, req *api.CreateUserRequest) (*api.CreateUserResponse, error) {

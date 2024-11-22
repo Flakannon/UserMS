@@ -1,4 +1,5 @@
 CREATE OR REPLACE FUNCTION get_users(
+    p_id UUID DEFAULT NULL,
     p_country TEXT DEFAULT NULL,
     p_email TEXT DEFAULT NULL,
     p_first_name TEXT DEFAULT NULL,
@@ -31,15 +32,24 @@ BEGIN
 
     -- Return with dynamic filtering - partial matching can be applied
     RETURN QUERY
-    SELECT *
+    SELECT 
+        users.id::UUID,
+        users.first_name::TEXT,
+        users.last_name::TEXT,
+        users.nick_name::TEXT,
+        users.email::TEXT,
+        users.country::TEXT,
+        users.created_at::TIMESTAMP,
+        users.updated_at::TIMESTAMP
     FROM users
     WHERE
-        (p_country IS NULL OR country = p_country) AND
-        (p_email IS NULL OR email = p_email) AND
-        (p_first_name IS NULL OR first_name ILIKE '%' || p_first_name || '%') AND
-        (p_last_name IS NULL OR last_name ILIKE '%' || p_last_name || '%') AND
-        (p_nick_name IS NULL OR nick_name ILIKE '%' || p_nick_name || '%')
-    ORDER BY created_at DESC
+        (p_id IS NULL OR users.id = p_id)  AND
+        (p_country IS NULL OR users.country = p_country) AND
+        (p_email IS NULL OR users.email = p_email) AND
+        (p_first_name IS NULL OR users.first_name ILIKE '%' || p_first_name || '%') AND
+        (p_last_name IS NULL OR users.last_name ILIKE '%' || p_last_name || '%') AND
+        (p_nick_name IS NULL OR users.nick_name ILIKE '%' || p_nick_name || '%')
+    ORDER BY users.created_at DESC
     LIMIT p_page_size
     OFFSET (p_page - 1) * p_page_size;
 END;

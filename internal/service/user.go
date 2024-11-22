@@ -27,6 +27,8 @@ type User struct {
 	UpdatedAt time.Time
 }
 
+type Users []User
+
 func (u *User) hashPassword() {
 	hashed, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -66,6 +68,34 @@ func (u *User) toDTO() dto.UserDTO {
 		CreatedAt: sql.NullTime{Time: u.CreatedAt, Valid: !u.CreatedAt.IsZero()},
 		UpdatedAt: sql.NullTime{Time: u.UpdatedAt, Valid: !u.UpdatedAt.IsZero()},
 	}
+}
+
+func (u *User) FromDTO(userDTO dto.UserDTO) {
+	u.ID = userDTO.ID.String
+	u.FirstName = userDTO.FirstName.String
+	u.LastName = userDTO.LastName.String
+	u.Nickname = userDTO.Nickname.String
+	u.Password = userDTO.Password.String
+	u.Email = userDTO.Email.String
+	u.Country = userDTO.Country.String
+	u.CreatedAt = userDTO.CreatedAt.Time
+	u.UpdatedAt = userDTO.UpdatedAt.Time
+}
+
+func FromDTOToAPI(userDTO dto.UsersDTO) []*api.User {
+	users := make([]*api.User, 0, len(userDTO))
+	for _, u := range userDTO {
+		users = append(users, &api.User{
+			Id:        u.ID.String,
+			FirstName: u.FirstName.String,
+			LastName:  u.LastName.String,
+			Nickname:  u.Nickname.String,
+			Email:     u.Email.String,
+			Country:   u.Country.String,
+		})
+	}
+
+	return users
 }
 
 func toNullString(s string) sql.NullString {

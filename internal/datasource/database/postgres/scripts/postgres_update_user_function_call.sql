@@ -1,1 +1,1 @@
-call update_user($1, $2, $3, $4, $5, $6, $7)
+CALL update_user($1, $2, $3, $4, $5, $6, $7)

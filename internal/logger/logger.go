@@ -36,6 +36,7 @@ func Fatal(err error) {
 	os.Exit(1)
 }
 
+// LogTraces is a utility function to log current stack traces of all goroutines
 func LogTraces() {
 	p := pprof.Lookup("goroutine")
 	p.WriteTo(os.Stdout, 1)
