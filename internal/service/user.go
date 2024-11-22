@@ -1,13 +1,12 @@
 package service
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/EFG/api"
 	"github.com/EFG/internal/datasource/dto"
+	"github.com/EFG/internal/utils"
 	"golang.org/x/crypto/bcrypt"
-	"golang.org/x/exp/slog"
 )
 
 type Datasource interface {
@@ -29,78 +28,86 @@ type User struct {
 
 type Users []User
 
-func (u *User) hashPassword() {
+func (u *User) hashPassword() error {
 	hashed, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
-		slog.Error("Error hashing password", "error", err)
+		return err
 	}
 	u.Password = string(hashed)
+
+	return nil
 }
 
-func (u *User) FromAPICreate(apiUser *api.CreateUserRequest) {
-	u.FirstName = apiUser.FirstName
-	u.LastName = apiUser.LastName
-	u.Nickname = apiUser.Nickname
-	u.Password = apiUser.Password
-	u.Email = apiUser.Email
-	u.Country = apiUser.Country
+func NewUserFromCreateRequest(req *api.CreateUserRequest) User {
+	if req == nil {
+		return User{}
+	}
+	return User{
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Nickname:  req.Nickname,
+		Password:  req.Password,
+		Email:     req.Email,
+		Country:   req.Country,
+	}
 }
 
-func (u *User) FromAPIUpdate(apiUser *api.ModifyUserRequest) {
-	u.ID = apiUser.Id
-	u.FirstName = apiUser.FirstName
-	u.LastName = apiUser.LastName
-	u.Nickname = apiUser.Nickname
-	u.Password = apiUser.Password
-	u.Email = apiUser.Email
-	u.Country = apiUser.Country
+func NewUserFromModifyRequest(req *api.ModifyUserRequest) User {
+	if req == nil {
+		return User{}
+	}
+	return User{
+		ID:        req.Id,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Nickname:  req.Nickname,
+		Password:  req.Password,
+		Email:     req.Email,
+		Country:   req.Country,
+	}
 }
 
 func (u *User) toDTO() dto.UserDTO {
 	return dto.UserDTO{
-		ID:        toNullString(u.ID),
-		FirstName: toNullString(u.FirstName),
-		LastName:  toNullString(u.LastName),
-		Nickname:  toNullString(u.Nickname),
-		Password:  toNullString(u.Password),
-		Email:     toNullString(u.Email),
-		Country:   toNullString(u.Country),
-		CreatedAt: sql.NullTime{Time: u.CreatedAt, Valid: !u.CreatedAt.IsZero()},
-		UpdatedAt: sql.NullTime{Time: u.UpdatedAt, Valid: !u.UpdatedAt.IsZero()},
+		ID:        utils.ToNullString(u.ID),
+		FirstName: utils.ToNullString(u.FirstName),
+		LastName:  utils.ToNullString(u.LastName),
+		Nickname:  utils.ToNullString(u.Nickname),
+		Password:  utils.ToNullString(u.Password),
+		Email:     utils.ToNullString(u.Email),
+		Country:   utils.ToNullString(u.Country),
+		CreatedAt: utils.ToNullTime(u.CreatedAt),
+		UpdatedAt: utils.ToNullTime(u.UpdatedAt),
 	}
 }
 
-func (u *User) FromDTO(userDTO dto.UserDTO) {
-	u.ID = userDTO.ID.String
-	u.FirstName = userDTO.FirstName.String
-	u.LastName = userDTO.LastName.String
-	u.Nickname = userDTO.Nickname.String
-	u.Password = userDTO.Password.String
-	u.Email = userDTO.Email.String
-	u.Country = userDTO.Country.String
-	u.CreatedAt = userDTO.CreatedAt.Time
-	u.UpdatedAt = userDTO.UpdatedAt.Time
-}
+// func NewUserFromDTO(userDTO dto.UserDTO) User {
+// 	return User{
+// 		ID:        userDTO.ID.String,
+// 		FirstName: userDTO.FirstName.String,
+// 		LastName:  userDTO.LastName.String,
+// 		Nickname:  userDTO.Nickname.String,
+// 		Password:  userDTO.Password.String,
+// 		Email:     userDTO.Email.String,
+// 		Country:   userDTO.Country.String,
+// 		CreatedAt: userDTO.CreatedAt.Time,
+// 		UpdatedAt: userDTO.UpdatedAt.Time,
+// 	}
+// }
 
 func FromDTOToAPI(userDTO dto.UsersDTO) []*api.User {
-	users := make([]*api.User, 0, len(userDTO))
-	for _, u := range userDTO {
-		users = append(users, &api.User{
+	users := make([]*api.User, len(userDTO))
+	for i, u := range userDTO {
+		users[i] = &api.User{
 			Id:        u.ID.String,
 			FirstName: u.FirstName.String,
 			LastName:  u.LastName.String,
 			Nickname:  u.Nickname.String,
 			Email:     u.Email.String,
 			Country:   u.Country.String,
-		})
+			CreatedAt: u.CreatedAt.Time.String(),
+			UpdatedAt: u.UpdatedAt.Time.String(),
+		}
 	}
-
 	return users
-}
-
-func toNullString(s string) sql.NullString {
-	if s == "" {
-		return sql.NullString{Valid: false}
-	}
-	return sql.NullString{String: s, Valid: true}
 }

@@ -2,6 +2,7 @@ package server
 
 import (
 	context "context"
+	"log/slog"
 
 	"github.com/EFG/api"
 	"github.com/EFG/internal/datasource/dto"
@@ -42,10 +43,14 @@ func (s *server) GetUsers(ctx context.Context, req *api.GetUsersRequest) (*api.G
 }
 
 func (s *server) CreateUser(ctx context.Context, req *api.CreateUserRequest) (*api.CreateUserResponse, error) {
-	var u service.User
-	u.FromAPICreate(req)
+	if err := validateCreateUserRequest(req); err != nil {
+		slog.Error("failed to validate create user request required fields missing", "error", err)
+		return nil, err
+	}
 
-	id, err := service.FormatNewUserAndPersist(ctx, s.Datasource, u)
+	user := service.NewUserFromCreateRequest(req)
+
+	id, err := service.FormatNewUserAndPersist(ctx, s.Datasource, user)
 	if err != nil {
 		return nil, err
 	}
@@ -57,10 +62,14 @@ func (s *server) CreateUser(ctx context.Context, req *api.CreateUserRequest) (*a
 }
 
 func (s *server) ModifyUser(ctx context.Context, req *api.ModifyUserRequest) (*api.ModifyUserResponse, error) {
-	var u service.User
-	u.FromAPIUpdate(req)
+	if err := validateExistingUserRequest(req); err != nil {
+		slog.Error("failed to validate modify user request required fields missing", "error", err)
+		return nil, err
+	}
 
-	err := service.FormatExistingUserAndPersist(ctx, s.Datasource, u)
+	user := service.NewUserFromModifyRequest(req)
+
+	err := service.FormatExistingUserAndPersist(ctx, s.Datasource, user)
 	if err != nil {
 		return nil, err
 	}
@@ -70,6 +79,10 @@ func (s *server) ModifyUser(ctx context.Context, req *api.ModifyUserRequest) (*a
 }
 
 func (s *server) DeleteUser(ctx context.Context, req *api.DeleteUserRequest) (*api.DeleteUserResponse, error) {
+	if err := validateExistingUserRequest(&api.ModifyUserRequest{Id: req.Id}); err != nil {
+		slog.Error("failed to validate delete user request required fields missing", "error", err)
+		return nil, err
+	}
 	err := service.DeleteUserFromDatasource(ctx, s.Datasource, req.Id)
 	if err != nil {
 		return nil, err

@@ -2,20 +2,14 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
+	"log/slog"
 
 	"github.com/EFG/internal/datasource/dto"
 
 	_ "embed"
 )
-
-// p_ID UUID DEFAULT NULL,
-// p_country TEXT DEFAULT NULL,
-// p_email TEXT DEFAULT NULL,
-// p_first_name TEXT DEFAULT NULL,
-// p_last_name TEXT DEFAULT NULL,
-// p_nick_name TEXT DEFAULT NULL,
-// p_page INT DEFAULT 1,
-// p_page_size INT DEFAULT 10
 
 //go:embed scripts/postgres_get_users_function_call.sql
 var getUsersFunctionCall string
@@ -32,10 +26,21 @@ func (d *Client) GetUsers(ctx context.Context, user dto.GetUsersArgs) (dto.Users
 		user.PageSize,
 	)
 	if err != nil {
-		return nil, 0, err
+		slog.Error("failed to call get_users function", "error", err)
+		return nil, 0, fmt.Errorf("failed to call get_users function: %w", err)
 	}
 	defer rows.Close()
 
+	users, err := scanUsers(rows)
+	if err != nil {
+		slog.Error("failed to scan users", "error", err)
+		return nil, 0, fmt.Errorf("failed to scan users: %w", err)
+	}
+
+	return users, len(users), nil
+}
+
+func scanUsers(rows *sql.Rows) (dto.UsersDTO, error) {
 	var users dto.UsersDTO
 	for rows.Next() {
 		var u dto.UserDTO
@@ -49,14 +54,9 @@ func (d *Client) GetUsers(ctx context.Context, user dto.GetUsersArgs) (dto.Users
 			&u.CreatedAt,
 			&u.UpdatedAt,
 		); err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		users = append(users, u)
 	}
-
-	if err := rows.Err(); err != nil {
-		return nil, 0, err
-	}
-
-	return users, len(users), nil
+	return users, nil
 }

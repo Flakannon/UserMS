@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/EFG/api"
+	"github.com/EFG/internal/utils"
 )
 
 type UserDTO struct {
@@ -32,26 +33,12 @@ type GetUsersArgs struct {
 }
 
 func (g *GetUsersArgs) FromAPI(req *api.GetUsersRequest) {
-	g.Page = toNullInt32(req.Page)
-	g.PageSize = toNullInt32(req.PageSize)
-	g.FilterID = toNullString(req.FilterId)
-	g.FilterFirstName = toNullString(req.FilterFirstName)
-	g.FilterLastName = toNullString(req.FilterLastName)
-	g.FilterNickname = toNullString(req.FilterNickname)
-	g.FilterEmail = toNullString(req.FilterEmail)
-	g.FilterCountry = toNullString(req.FilterCountry)
-}
-
-func toNullString(s string) sql.NullString {
-	if s == "" {
-		return sql.NullString{Valid: false}
-	}
-	return sql.NullString{String: s, Valid: true}
-}
-
-func toNullInt32(i int32) sql.NullInt32 {
-	if i == 0 {
-		return sql.NullInt32{Valid: false}
-	}
-	return sql.NullInt32{Int32: i, Valid: true}
+	g.Page = utils.ToNullInt32(req.Page)
+	g.PageSize = utils.ToNullInt32(req.PageSize)
+	g.FilterID = utils.ToNullString(req.FilterId)
+	g.FilterFirstName = utils.ToNullString(req.FilterFirstName)
+	g.FilterLastName = utils.ToNullString(req.FilterLastName)
+	g.FilterNickname = utils.ToNullString(req.FilterNickname)
+	g.FilterEmail = utils.ToNullString(req.FilterEmail)
+	g.FilterCountry = utils.ToNullString(req.FilterCountry)
 }

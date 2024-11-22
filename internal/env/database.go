@@ -33,7 +33,10 @@ func LoadDatabaseConfig() (config DatabaseConfig, err error) {
 		return DatabaseConfig{}, fmt.Errorf("validation failed  %s: %w", "POSTGRES", err)
 	}
 
-	slog.Info("Loaded configuration for prefix %s: %+v\n", "POSTGRES", config)
+	slog.Info("Loaded database configuration",
+		"prefix", "POSTGRES",
+		"db", config.Database,
+		"schema", config.Schema)
 
 	return
 }
