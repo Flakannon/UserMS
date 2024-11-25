@@ -3,6 +3,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 )
 
 type Client interface {
@@ -21,6 +22,9 @@ func (d BaseClient) Close() error {
 	return nil
 }
 
-func (d BaseClient) PingDatabase() error {
-	return d.DB.Ping()
+func (d *BaseClient) PingDatabase() error {
+	if err := d.DB.Ping(); err != nil {
+		return fmt.Errorf("database ping failed: %w", err)
+	}
+	return nil
 }

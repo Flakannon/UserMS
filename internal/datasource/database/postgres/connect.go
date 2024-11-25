@@ -28,7 +28,7 @@ func NewClient(config env.DatabaseConfig) *Client {
 
 // Connects to database via postgres driver
 func (d *Client) Connect() error {
-	connString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+	connString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&connect_timeout=10",
 		d.Config.Username, d.Config.Password, d.Config.Host, d.Config.Port, d.Config.Database)
 
 	slog.Info("Now attempting to connect to postgres database")

@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/EFG/api"
 	"github.com/EFG/internal/datasource/database/postgres"
@@ -13,6 +14,8 @@ import (
 	"github.com/EFG/internal/logger"
 	"github.com/EFG/internal/server"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
 func main() {
@@ -43,6 +46,25 @@ func main() {
 
 	api.RegisterUserServiceServer(grpcServer, userServer)
 
+	healthServer := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(grpcServer, healthServer)
+
+	// check heartbeat for database to update health status
+	go func() {
+		for {
+			slog.Info("Health check for critical connections running")
+			err := postgresDataSource.PingDatabase()
+			if err != nil {
+				slog.Warn("Database health check failed", "error", err)
+				healthServer.SetServingStatus("api.UserService", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
+			} else {
+				slog.Info("Database is healthy")
+				healthServer.SetServingStatus("api.UserService", grpc_health_v1.HealthCheckResponse_SERVING)
+			}
+			time.Sleep(10 * time.Second)
+		}
+	}()
+
 	slog.Info("gRPC server is listening on port 9000")
 	if err := grpcServer.Serve(lis); err != nil {
 		logger.Fatal(fmt.Errorf("failed to serve: %w", err))
@@ -55,34 +77,6 @@ func main() {
 	slog.Info("gRPC server is shutting down")
 }
 
-// user management micro service - implement in go
-
-// Requirements
-
-// A user will be stored using the following schema: - done hashing needs to be implemented at app level
-// ID: a unique identifier for the user
-// FirstName: the user's first name
-// LastName: the user's last name
-// Nickname: the user's nickname
-// Password[Hashed]: the user's password, hashed using bcrypt
-// Email: the user's email address
-// Country: the user's country
-// CreatedAt: the date and time the user was created
-// UpdatedAt: the date and time the user was last updated
-
-// The service must allow the following operations:
-// Create a new user - db done
-// Modify an existing user - db done
-// Remove a user - db done
-// Return a paginated list of users, allowing the results to be filtered by any of the fields e.g Country = "UK" - db done
-
-// The service must
-// Provide an HTTP or gRPC API to interact with the service
-// Use a sensible storage mechanism for storing users - done
-// Have the ability to notify other services of changes to user entities
+// Have the ability to notify other services of changes to user entities -- todo
 // Have meaningful logs
 // Be well documented - a good balance between code comments and external documentation in readme (especially of choices made and why)
-// Have a health check
-
-// The service must NOT:
-// Provide authentication or authorisation
