@@ -3,25 +3,26 @@ package server
 import (
 	context "context"
 	"log/slog"
+	"time"
 
 	"github.com/EFG/api"
 	"github.com/EFG/internal/datasource/dto"
 	"github.com/EFG/internal/service"
 )
 
-type Datasource interface {
-	service.Reader
-	service.Writer
-}
-
 type server struct {
 	api.UnimplementedUserServiceServer
-	service.Datasource // we are importing the service package anyway seems redundant to define the interface here for package independence
+	// we are importing the service package anyway seems redundant to define the interface here for package independence
+	service.Datasource
+	service.Notifier
+	timeNow func() time.Time
 }
 
-func NewServer(d Datasource) *server {
+func NewServer(d service.Datasource, n service.Notifier, tn func() time.Time) *server {
 	return &server{
 		Datasource: d,
+		Notifier:   n,
+		timeNow:    tn,
 	}
 }
 
@@ -51,6 +52,13 @@ func (s *server) CreateUser(ctx context.Context, req *api.CreateUserRequest) (*a
 	user := service.NewUserFromCreateRequest(req)
 
 	id, err := service.FormatNewUserAndPersist(ctx, s.Datasource, user)
+	if err != nil {
+		return nil, err
+	}
+
+	userChangeNotification := service.CreateUserChangeNotification("create", id, s.timeNow())
+
+	err = service.NotifyOfUserChange(ctx, s.Notifier, userChangeNotification)
 	if err != nil {
 		return nil, err
 	}

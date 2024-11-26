@@ -388,3 +388,51 @@ func TestFromDTOToAPI(t *testing.T) {
 		})
 	}
 }
+
+func TestCreateUserChangeNotification(t *testing.T) {
+	timeNow := time.Now()
+	type args struct {
+		changeType string
+		userID     string
+		eventTime  time.Time
+	}
+	tests := []struct {
+		name string
+		args args
+		want UserChange
+	}{
+		{
+			name: "valid user change",
+			args: args{
+				changeType: "create",
+				userID:     "123",
+				eventTime:  timeNow,
+			},
+			want: UserChange{
+				ChangeType: "create",
+				EventTime:  timeNow.Format(time.RFC3339),
+				UserID:     "123",
+			},
+		},
+		{
+			name: "empty user change",
+			args: args{
+				changeType: "",
+				userID:     "",
+				eventTime:  time.Time{},
+			},
+			want: UserChange{
+				ChangeType: "",
+				EventTime:  time.Time{}.Format(time.RFC3339),
+				UserID:     "",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := CreateUserChangeNotification(tt.args.changeType, tt.args.userID, tt.args.eventTime); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("CreateUserChangeNotification() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

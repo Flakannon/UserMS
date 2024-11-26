@@ -38,6 +38,20 @@ func (u *User) hashPassword() error {
 	return nil
 }
 
+type UserChange struct {
+	ChangeType string `json:"changeType"`
+	EventTime  string `json:"eventTime"`
+	UserID     string `json:"userId"`
+}
+
+func CreateUserChangeNotification(changeType string, userID string, eventTime time.Time) UserChange {
+	return UserChange{
+		ChangeType: changeType,
+		EventTime:  eventTime.Format(time.RFC3339),
+		UserID:     userID,
+	}
+}
+
 func NewUserFromCreateRequest(req *api.CreateUserRequest) User {
 	if req == nil {
 		return User{}

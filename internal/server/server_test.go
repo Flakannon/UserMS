@@ -3,9 +3,11 @@ package server
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/EFG/api"
 	"github.com/EFG/internal/datasource/database/postgres"
+	"github.com/EFG/internal/notifier"
 	"github.com/EFG/internal/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,8 +17,13 @@ func TestCreateUser_WritesToDataSource(t *testing.T) {
 		UUID: "123e4567-e89b-12d3-a456-426614174000",
 	}
 
+	mockNotifier := &notifier.MockNotifier{}
+
+	mockTimeNow := func() time.Time {
+		return time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	}
 	// Create the gRPC server with the mock
-	srv := NewServer(mockDatasource)
+	srv := NewServer(mockDatasource, mockNotifier, mockTimeNow)
 
 	// Mock gRPC request
 	req := &api.CreateUserRequest{
@@ -35,7 +42,7 @@ func TestCreateUser_WritesToDataSource(t *testing.T) {
 	assert.Equal(t, "123e4567-e89b-12d3-a456-426614174000", resp.Id)
 	assert.Equal(t, "Successfully created user", resp.Message)
 
-	// Check the mock call history
+	// Check the mock datasource call history
 	assert.Len(t, mockDatasource.GetCallHistory(), 1)
 	assert.Equal(t, "John", mockDatasource.GetCallHistory()[0].FirstName.String)
 	assert.Equal(t, "Doe", mockDatasource.GetCallHistory()[0].LastName.String)
@@ -43,6 +50,13 @@ func TestCreateUser_WritesToDataSource(t *testing.T) {
 	assert.Equal(t, "USA", mockDatasource.GetCallHistory()[0].Country.String)
 	assert.Equal(t, "johndoe", mockDatasource.GetCallHistory()[0].Nickname.String)
 	assert.Equal(t, "john.doe@example.com", mockDatasource.GetCallHistory()[0].Email.String)
+
+	// check the mock notifier call history
+	assert.True(t, mockNotifier.PublishCalled)
+	assert.Len(t, mockNotifier.PublishedMessages, 1)
+	assert.Contains(t, string(mockNotifier.PublishedMessages[0]), "create")
+	assert.Contains(t, string(mockNotifier.PublishedMessages[0]), "123e4567-e89b-12d3-a456-426614174000")
+	assert.Contains(t, string(mockNotifier.PublishedMessages[0]), "2025-01-01T00:00:00Z")
 
 	// Reset and check the mock
 	mockDatasource.Reset()
@@ -55,8 +69,13 @@ func TestCreateUsers_DataSourceError(t *testing.T) {
 		TestRequiresError: true,
 	}
 
+	mockNotifier := &notifier.MockNotifier{}
+
+	mockTimeNow := func() time.Time {
+		return time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	}
 	// Create the gRPC server with the mock
-	srv := NewServer(mockDatasource)
+	srv := NewServer(mockDatasource, mockNotifier, mockTimeNow)
 
 	// Mock gRPC request
 	req := &api.CreateUserRequest{
@@ -80,8 +99,14 @@ func TestCreateUser_ValidationErrorsForMissingFieldsInRequest(t *testing.T) {
 	mockDatasource := &postgres.MockClient{
 		UUID: "123e4567-e89b-12d3-a456-426614174000",
 	}
+
+	mockNotifier := &notifier.MockNotifier{}
+
+	mockTimeNow := func() time.Time {
+		return time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	}
 	// Create the gRPC server with the mock
-	srv := NewServer(mockDatasource)
+	srv := NewServer(mockDatasource, mockNotifier, mockTimeNow)
 
 	tests := []struct {
 		name        string
@@ -159,8 +184,13 @@ func TestModifyUser_WritesToDataSource(t *testing.T) {
 		UUID: "123e4567-e89b-12d3-a456-426614174001",
 	}
 
+	mockNotifier := &notifier.MockNotifier{}
+
+	mockTimeNow := func() time.Time {
+		return time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	}
 	// Create the gRPC server with the mock
-	srv := NewServer(mockDatasource)
+	srv := NewServer(mockDatasource, mockNotifier, mockTimeNow)
 
 	// Mock gRPC request
 	req := &api.ModifyUserRequest{
@@ -194,8 +224,13 @@ func TestModifyUser_DataSourceError(t *testing.T) {
 		TestRequiresError: true,
 	}
 
+	mockNotifier := &notifier.MockNotifier{}
+
+	mockTimeNow := func() time.Time {
+		return time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	}
 	// Create the gRPC server with the mock
-	srv := NewServer(mockDatasource)
+	srv := NewServer(mockDatasource, mockNotifier, mockTimeNow)
 
 	// Mock gRPC request
 	req := &api.ModifyUserRequest{
@@ -219,8 +254,13 @@ func TestModifyUser_ValidationErrorsForMissingFieldsInRequest(t *testing.T) {
 	mockDatasource := &postgres.MockClient{
 		UUID: "123e4567-e89b-12d3-a456-426614174000",
 	}
+	mockNotifier := &notifier.MockNotifier{}
+
+	mockTimeNow := func() time.Time {
+		return time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	}
 	// Create the gRPC server with the mock
-	srv := NewServer(mockDatasource)
+	srv := NewServer(mockDatasource, mockNotifier, mockTimeNow)
 
 	tests := []struct {
 		name        string
@@ -311,8 +351,13 @@ func TestDeleteUser_WritesToDataSource(t *testing.T) {
 		UUID: "123e4567-e89b-12d3-a456-426614174001",
 	}
 
+	mockNotifier := &notifier.MockNotifier{}
+
+	mockTimeNow := func() time.Time {
+		return time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	}
 	// Create the gRPC server with the mock
-	srv := NewServer(mockDatasource)
+	srv := NewServer(mockDatasource, mockNotifier, mockTimeNow)
 
 	// Mock gRPC request
 	req := &api.DeleteUserRequest{
@@ -335,8 +380,13 @@ func TestDeleteUser_DataSourceError(t *testing.T) {
 		TestRequiresError: true,
 	}
 
+	mockNotifier := &notifier.MockNotifier{}
+
+	mockTimeNow := func() time.Time {
+		return time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	}
 	// Create the gRPC server with the mock
-	srv := NewServer(mockDatasource)
+	srv := NewServer(mockDatasource, mockNotifier, mockTimeNow)
 
 	// Mock gRPC request
 	req := &api.DeleteUserRequest{
@@ -354,8 +404,14 @@ func TestDeleteUser_ValidationErrorsForMissingFieldsInRequest(t *testing.T) {
 	mockDatasource := &postgres.MockClient{
 		UUID: "123e4567-e89b-12d3-a456-426614174000",
 	}
+
+	mockNotifier := &notifier.MockNotifier{}
+
+	mockTimeNow := func() time.Time {
+		return time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	}
 	// Create the gRPC server with the mock
-	srv := NewServer(mockDatasource)
+	srv := NewServer(mockDatasource, mockNotifier, mockTimeNow)
 
 	tests := []struct {
 		name        string
@@ -403,8 +459,13 @@ func TestDeleteUser_ValidationErrorsForMissingFieldsInRequest(t *testing.T) {
 func TestGetUser_ReadsFromDataSource(t *testing.T) {
 	mockDatasource := &postgres.MockClient{}
 
+	mockNotifier := &notifier.MockNotifier{}
+
+	mockTimeNow := func() time.Time {
+		return time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	}
 	// Create the gRPC server with the mock
-	srv := NewServer(mockDatasource)
+	srv := NewServer(mockDatasource, mockNotifier, mockTimeNow)
 
 	// Mock gRPC request
 	req := &api.GetUsersRequest{
@@ -434,8 +495,13 @@ func TestGetUsers_DataSourceError(t *testing.T) {
 		TestRequiresError: true,
 	}
 
+	mockNotifier := &notifier.MockNotifier{}
+
+	mockTimeNow := func() time.Time {
+		return time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	}
 	// Create the gRPC server with the mock
-	srv := NewServer(mockDatasource)
+	srv := NewServer(mockDatasource, mockNotifier, mockTimeNow)
 
 	// Mock gRPC request
 	req := &api.GetUsersRequest{

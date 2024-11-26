@@ -12,6 +12,7 @@ import (
 	"github.com/EFG/internal/datasource/database/postgres"
 	"github.com/EFG/internal/env"
 	"github.com/EFG/internal/logger"
+	"github.com/EFG/internal/notifier"
 	"github.com/EFG/internal/server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -42,7 +43,9 @@ func main() {
 	}
 	defer postgresDataSource.Close()
 
-	userServer := server.NewServer(postgresDataSource)
+	mockNotifier := &notifier.MockNotifier{}
+
+	userServer := server.NewServer(postgresDataSource, mockNotifier, time.Now)
 
 	api.RegisterUserServiceServer(grpcServer, userServer)
 
