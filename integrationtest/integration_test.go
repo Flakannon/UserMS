@@ -19,7 +19,8 @@ func TestCreateUserIntegration_HappyPath(t *testing.T) {
 	assert.NoError(t, err, "failed to connect to datasource")
 	defer d.Disconnect()
 
-	d.ResetUserStore()
+	err = d.ResetUserStore()
+	assert.NoError(t, err)
 
 	req := &api.CreateUserRequest{
 		FirstName: "Jane",
@@ -59,7 +60,8 @@ func TestCreateUserIntegration_ErrorCreatingUserForExistingEmail(t *testing.T) {
 	assert.NoError(t, err, "failed to connect to datasource")
 	defer d.Disconnect()
 
-	d.ResetUserStore()
+	err = d.ResetUserStore()
+	assert.NoError(t, err)
 
 	req := &api.CreateUserRequest{
 		FirstName: "Jane",
@@ -99,7 +101,8 @@ func TestModifyUserIntegration_HappyPath(t *testing.T) {
 	assert.NoError(t, err, "failed to connect to datasource")
 	defer d.Disconnect()
 
-	d.ResetUserStore()
+	err = d.ResetUserStore()
+	assert.NoError(t, err)
 
 	req := &api.CreateUserRequest{
 		FirstName: "Jane",
@@ -152,7 +155,8 @@ func TestModifyUserIntegration_ErrorModifyingUserThatDoeNotExist(t *testing.T) {
 	assert.NoError(t, err, "failed to connect to datasource")
 	defer d.Disconnect()
 
-	d.ResetUserStore()
+	err = d.ResetUserStore()
+	assert.NoError(t, err)
 
 	fakeId := "00000000-0000-0000-0000-000000000000"
 
@@ -182,7 +186,8 @@ func TestDeleteUserIntegration_HappyPath(t *testing.T) {
 	assert.NoError(t, err, "failed to connect to datasource")
 	defer d.Disconnect()
 
-	d.ResetUserStore()
+	err = d.ResetUserStore()
+	assert.NoError(t, err)
 
 	req := &api.CreateUserRequest{
 		FirstName: "Jane",
@@ -229,7 +234,8 @@ func TestDeleteUserIntegration_ErrorDeletingUserThatDoeNotExist(t *testing.T) {
 	assert.NoError(t, err, "failed to connect to datasource")
 	defer d.Disconnect()
 
-	d.ResetUserStore()
+	err = d.ResetUserStore()
+	assert.NoError(t, err)
 
 	fakeId := "00000000-0000-0000-0000-000000000000"
 
@@ -254,7 +260,8 @@ func TestGetUsersIntegration_HappyPath(t *testing.T) {
 	assert.NoError(t, err, "failed to connect to datasource")
 	defer d.Disconnect()
 
-	d.ResetUserStore()
+	err = d.ResetUserStore()
+	assert.NoError(t, err)
 
 	req := &api.CreateUserRequest{
 		FirstName: "Jane",

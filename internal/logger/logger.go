@@ -4,7 +4,6 @@ import (
 	"io"
 	"log/slog"
 	"os"
-	"runtime/pprof"
 )
 
 type LoggerInitOpts struct {
@@ -34,10 +33,4 @@ func SetUpLogger(opts LoggerInitOpts) *slog.Logger {
 func Fatal(err error) {
 	slog.Error("Fatal error", "error", err)
 	os.Exit(1)
-}
-
-// LogTraces is a utility function to log current stack traces of all goroutines
-func LogTraces() {
-	p := pprof.Lookup("goroutine")
-	p.WriteTo(os.Stdout, 1)
 }

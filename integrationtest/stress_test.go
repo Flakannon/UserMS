@@ -24,7 +24,8 @@ func TestStressForCreateUsers(t *testing.T) {
 	assert.NoError(t, err, "failed to connect to datasource")
 	defer d.Disconnect()
 
-	d.ResetUserStore()
+	err = d.ResetUserStore()
+	assert.NoError(t, err)
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex

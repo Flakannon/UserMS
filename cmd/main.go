@@ -81,5 +81,3 @@ func main() {
 }
 
 // Have the ability to notify other services of changes to user entities -- todo
-// Have meaningful logs
-// Be well documented - a good balance between code comments and external documentation in readme (especially of choices made and why)
