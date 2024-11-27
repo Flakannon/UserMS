@@ -81,6 +81,14 @@ func (s *server) ModifyUser(ctx context.Context, req *api.ModifyUserRequest) (*a
 	if err != nil {
 		return nil, err
 	}
+
+	userChangeNotification := service.CreateUserChangeNotification("modify", user.ID, s.timeNow())
+
+	err = service.NotifyOfUserChange(ctx, s.Notifier, userChangeNotification)
+	if err != nil {
+		return nil, err
+	}
+
 	return &api.ModifyUserResponse{
 		Message: "Successfully modified user",
 	}, nil
@@ -92,6 +100,13 @@ func (s *server) DeleteUser(ctx context.Context, req *api.DeleteUserRequest) (*a
 		return nil, err
 	}
 	err := service.DeleteUserFromDatasource(ctx, s.Datasource, req.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	userChangeNotification := service.CreateUserChangeNotification("delete", req.Id, s.timeNow())
+
+	err = service.NotifyOfUserChange(ctx, s.Notifier, userChangeNotification)
 	if err != nil {
 		return nil, err
 	}

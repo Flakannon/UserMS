@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net"
@@ -9,11 +10,13 @@ import (
 	"time"
 
 	"github.com/EFG/api"
+	"github.com/EFG/internal/aws"
 	"github.com/EFG/internal/datasource/database/postgres"
 	"github.com/EFG/internal/env"
 	"github.com/EFG/internal/logger"
 	"github.com/EFG/internal/notifier"
 	"github.com/EFG/internal/server"
+	"github.com/EFG/internal/service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -43,9 +46,27 @@ func main() {
 	}
 	defer postgresDataSource.Close()
 
-	mockNotifier := &notifier.MockNotifier{}
+	awsConfig, err := env.LoadAWSConfig()
+	if err != nil {
+		logger.Fatal(fmt.Errorf("failed to load AWS config: %w", err))
+	}
 
-	userServer := server.NewServer(postgresDataSource, mockNotifier, time.Now)
+	ctx := context.Background()
+
+	// Always default to NoOpNotifier
+	var notifierService service.Notifier = notifier.NewNoOpNotifier()
+
+	if awsConfig.IsValid() {
+		snsClient, err := aws.NewSNSClient(ctx, awsConfig)
+		if err != nil {
+			slog.Info("Failed to create SNS client, using NoOpNotifier", "error", err)
+		} else {
+			notifierService = notifier.NewSNSNotifier(snsClient)
+			slog.Info("SNS notifier service is enabled")
+		}
+	}
+
+	userServer := server.NewServer(postgresDataSource, notifierService, time.Now)
 
 	api.RegisterUserServiceServer(grpcServer, userServer)
 
@@ -79,5 +100,3 @@ func main() {
 	grpcServer.GracefulStop()
 	slog.Info("gRPC server is shutting down")
 }
-
-// Have the ability to notify other services of changes to user entities -- todo

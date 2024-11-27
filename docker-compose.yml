@@ -49,3 +49,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+  localstack:
+    container_name: localstack
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - DEFAULT_REGION=eu-west-2
+      - DATA_DIR=/tmp/localstack/data
+    volumes:
+      - "./.localstack:/var/lib/localstack"

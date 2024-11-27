@@ -93,6 +93,10 @@ func TestCreateUsers_DataSourceError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, resp)
 	assert.Contains(t, err.Error(), "failed to create user: mock db error for create user")
+
+	// check the mock notifier call history
+	assert.False(t, mockNotifier.PublishCalled)
+	assert.Len(t, mockNotifier.PublishedMessages, 0)
 }
 
 func TestCreateUser_ValidationErrorsForMissingFieldsInRequest(t *testing.T) {
@@ -209,6 +213,7 @@ func TestModifyUser_WritesToDataSource(t *testing.T) {
 
 	assert.Equal(t, "Successfully modified user", resp.Message)
 
+	// Check the mock datasource call history
 	assert.Len(t, mockDatasource.GetCallHistory(), 1)
 	assert.Equal(t, "John", mockDatasource.GetCallHistory()[0].FirstName.String)
 	assert.Equal(t, "Doe", mockDatasource.GetCallHistory()[0].LastName.String)
@@ -216,6 +221,12 @@ func TestModifyUser_WritesToDataSource(t *testing.T) {
 	assert.Equal(t, "USA", mockDatasource.GetCallHistory()[0].Country.String)
 	assert.Equal(t, "johndoe", mockDatasource.GetCallHistory()[0].Nickname.String)
 	assert.Equal(t, "john.doe@example.com", mockDatasource.GetCallHistory()[0].Email.String)
+
+	// check the mock notifier call history
+	assert.True(t, mockNotifier.PublishCalled)
+	assert.Len(t, mockNotifier.PublishedMessages, 1)
+	assert.Contains(t, string(mockNotifier.PublishedMessages[0]), "modify")
+	assert.Contains(t, string(mockNotifier.PublishedMessages[0]), "123e4567-e89b-12d3-a456-426614174001")
 }
 
 func TestModifyUser_DataSourceError(t *testing.T) {
@@ -248,6 +259,10 @@ func TestModifyUser_DataSourceError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, resp)
 	assert.Contains(t, err.Error(), "failed to modify user: mock db error for modify user")
+
+	// check the mock notifier call history
+	assert.False(t, mockNotifier.PublishCalled)
+	assert.Len(t, mockNotifier.PublishedMessages, 0)
 }
 
 func TestModifyUser_ValidationErrorsForMissingFieldsInRequest(t *testing.T) {
@@ -370,8 +385,15 @@ func TestDeleteUser_WritesToDataSource(t *testing.T) {
 
 	assert.Equal(t, "Successfully deleted user", resp.Message)
 
+	// Check the mock datasource call history
 	assert.Len(t, mockDatasource.GetCallHistory(), 1)
 	assert.Equal(t, "123e4567-e89b-12d3-a456-426614174001", mockDatasource.GetCallHistory()[0].ID.String)
+
+	// check the mock notifier call history
+	assert.True(t, mockNotifier.PublishCalled)
+	assert.Len(t, mockNotifier.PublishedMessages, 1)
+	assert.Contains(t, string(mockNotifier.PublishedMessages[0]), "delete")
+	assert.Contains(t, string(mockNotifier.PublishedMessages[0]), "123e4567-e89b-12d3-a456-426614174001")
 }
 
 func TestDeleteUser_DataSourceError(t *testing.T) {
@@ -398,6 +420,10 @@ func TestDeleteUser_DataSourceError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, resp)
 	assert.Contains(t, err.Error(), "failed to delete user: mock db error for delete user")
+
+	// check the mock notifier call history
+	assert.False(t, mockNotifier.PublishCalled)
+	assert.Len(t, mockNotifier.PublishedMessages, 0)
 }
 
 func TestDeleteUser_ValidationErrorsForMissingFieldsInRequest(t *testing.T) {

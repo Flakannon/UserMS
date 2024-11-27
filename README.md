@@ -1,15 +1,12 @@
-# user-service
+# user-service project
 
 ## Architecture
 
-This application relies on some integrations (mainly to a datasource and a notifier). To handle these the architecture implemented allows for these to be injected either as a mock or real (a simple form of dependency injection through the use of [Go's Interfaces](https://go.dev/tour/methods/9)). Each dependency is fronted by an abstract interface that is then subsequently implemented by the real or mocked service. This allows for an easy swap out of real services with mocked ones for running locally or in Pre-Production/Production environments, as well as not tying the underlying deeper level implementation that is tied technologies and possibly vendors to bleed into pure application logic that should have no concern with that level of detail. 
+This application relies on some integrations (mainly to a datasource and a notifier). To handle these the architecture implemented allows for these to be injected either mocked or real (a simple form of dependency injection through the use of [Go's Interfaces](https://go.dev/tour/methods/9)). Each dependency is fronted by an abstract interface that is then subsequently implemented by the real or mocked service. This allows for an easy swap out of real services with mocked ones for running locally or in Pre-Production/Production environments, as well as not tying the underlying deeper level implementation that is tied technologies and possibly vendors to bleed into pure application logic that should have no concern with that level of detail. 
 
-The entry point into the `user-service` is a gRPC API implement in the in the `internal/server` package. The main `server` struct in this package is used in main to inject the relevant datasource and notifier dependencies. These will then passed via the different handlers for each endpoint in the API.
+The entry point into the `user-service` is a gRPC API implemented in the `internal/server` package. The main `server` struct in this package is used in main to inject the relevant datasource and notifier dependencies. These will then passed via the different handlers for each endpoint in the API.
 
  The handlers here will delegate work for the respective actions called via the API to the `user service` core logic, which lives in `internal/service`. Here the processing of data from API requests is transformed and then orchestration for the reading/writing/notifying is set using the relevant interfaces to interact with the underlying implementations (either real or mocked) to conduct unit and integration testing, as well as be used by the real initialised application when running so that it can take requests from the client server and perform the expected actions with relevant responses via the API.
-
- The following diagram shows the high level architecture of the application: 
- -- image here
 
 ## Running the app
 
@@ -26,7 +23,28 @@ To interact with the gRPC api a client server has been configured and be can be 
 
 To connect to the database to see the data persisted using your favourite db workbench, you can connect to the postgres instance using the config found in the image below. Important to note that it will connect through localhost you may have noticed that the docker compose config needs the container name explicitly since they are on the same docker network the user service will connect slightly differently.
 
-![db local connection](assets/readme/image.png)
+![db local connection](assets/readme/dbsetup.png)
+
+To get the notifier running: 
+
+I have setup the 'real' notifier to be an SNS topic, that is controlled through Infrastructure As Code 'IAC' in the root `terraform` folder. The main.tf here is mocked to feed into localstack as standard. So after running 
+```sh
+make fresh
+```
+if you wish to use the SNS topic the following dependencies are required: 
+[tflocal install](https://docs.localstack.cloud/user-guide/integrations/terraform/#using-the-tflocal-script) and [awslocal install](https://docs.localstack.cloud/user-guide/integrations/aws-cli/#localstack-aws-cli-awslocal)
+
+after installing them running the following ""inside"" the root `terraform` folder will bring the SNS topic to life in docker: 
+
+`tflocal init`
+`tflocal apply -auto-approve`
+
+With the notifier the default setup is a no-op object. To turn on the 'real' notifier in this case an SNS topic, the following the env vars will need to be set in the docker compose yaml file for the user service container. There is a validation check on the AWS config struct that gets loaded through the env package to confirm that a working set of env vars are available.
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_LOCALSTACK_URL=http://localstack:4566
+      - AWS_REGION=eu-west-2
+      - AWS_USER_CHANGE_NOTIFICATION_TOPIC=arn:aws:sns:eu-west-2:000000000000:user_change_notification
 
 ## Database Migrations
 
@@ -54,6 +72,12 @@ It is important to note that are other types of naming conventions and sub folde
 This is very useful for managing database objects whose definition can then simply be maintained in a single file in version control. They are typically used for (Re-)creating views/procedures/functions etc.
 
 > Note: A decent caveat for the repeatable migrations which you may be wondering as to why the functions in the user-service are being create via versioned migrations. Is that more complex objects can bleed into each other depending on how statements are built inside them. To avoid this you can sue versioned migrations to help split apart the creation of these objects. It also means that the objects will not try to be recreated every time a flyway migration is ran
+
+## Running the tests
+
+There are two main testing suites around the codebase, units tests will live in each respective package in the `internal` folder these can be run without any concern at any point. 
+
+The integration test suite which lives in the `integrationtest` folder at root required the services to be alive in Docker to be able to run so `make fresh` will have to have been before and the containers are running docker to be able to run those.
 
 ## Decisions
 
@@ -105,16 +129,33 @@ One challenge I encountered during iterative development was ensuring that the c
 
 ### Notifier
 
+The notifier is set up as an abstraction similar to the datasource so in terms of how its aligns with the core application logic, the technology under the hood can be anything that suites it most. For the purpose of demonstration Ive created, a mock that is used in the test suite, a no-op which logs out for the user service and also an SNS specific set up. There are guidelines above in the run locally section about how to bring the SNS topic to life in docker and localstack to get that running and see the message ids returned from successful publishes in the logs i.e.
 
-### Good practice
+![logs for SNS in docker](assets/readme/snslogs.png)
 
+### Good practices
+
+During the course of this project, I have placed emphasis on several key areas of design that align with good Go practices:
+	•	Dependency Injection
+	•	Separation of Concerns
+	•	Interface Abstraction
+	•	Minimal Global State
+
+These principles form the foundational “building block” analogy I like to use when structuring a project. By keeping to these practices, the project remains naturally flat, easier to test, and mockable, this approach also enables developers to isolate specific chunks of code, improving accuracy and code coverage while reducing overall complexity.
+
+By separating responsibilities across distinct modules and packages, and keeping interfaces as small as possible, the project minimizes cognitive complexity for developers. It also highlights key strategic way of thinking like:
+A reader should not have write permissions. By keeping the tightness of scoped interfaces, the project reduces risks and enforces clear boundaries for anyone developing it further.
+
+Interfaces are used to abstract dependencies, which allows for easier testing and mocking. This also keeps the system extensible, as implementation details can drastically change without affecting the core logic.
+
+Minimising global state reduces the risk of unintended side effects. This is particularly important in environments like serverless functions, where global state can persist across invocations. By eliminating global variables, the project ensures that each execution starts from a clean state.
 
 ## For the future
 Given some more TLC, there are several areas of the application I would love to enhance to increase it's functionality and robustness:
 
 1.	Expanding the test suites:
 
-    While the current test suites cover critical paths and assumes mainly happy-path scenarios, additional focus on edge cases and error scenarios would significantly improve the application’s resilience. Elaborating both unit and integration tests to account for these cases even more would help ensure better coverage.
+    While the current test suites cover critical paths and assumes mainly happy-path scenarios, additional focus on edge cases and error scenarios would significantly improve the application’s resilience. Elaborating both unit and integration tests to account for these cases even more would help ensure better coverage. It would have been nice to set up a small HTTP server to subscribe to the SNS topic as well to ensure completeness for the notifier.
 
 2.	Exploration of gRPC Streaming:
 
@@ -123,6 +164,8 @@ Given some more TLC, there are several areas of the application I would love to 
 3.	Metrics and Observability:
 
     Given more time, I would identify key metrics to capture during the application’s process flow and operation. These metrics would aim to provide valuable insights into system performance, help measure how effectively the service delivers business value, allow us to detect trends (peak usage times). But mainly this data would be instrumental in helping the product team to drive decisions for feature development and optimising service performance to deliver impactful results as quick as possible.
+
+
 
 
 
